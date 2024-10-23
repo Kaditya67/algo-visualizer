@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithm Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        /* Container for array bars */
+        #array-bars {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 300px;
+            width: 100%;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            overflow: hidden; /* Prevent overflow */
+            position: relative;
+        }
+
+        .bar-container {
+            display: inline-block;
+            position: relative;
+            margin-right: 3px;
+        }
+
+        /* Adjust bar width and height dynamically */
+        .bar {
+            transition: background-color 0.3s, height 0.3s;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            background-color: #4CAF50; /* Initial color for all bars */
+        }
+
+        /* Display value on top of each bar */
+        .bar-value {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .highlight {
+            background-color: #FFD700; /* Gold for highlighting */
+        }
+
+        .swap {
+            background-color: #FF6347; /* Tomato for swap indication */
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #input-array {
+            padding: 10px;
+            width: 80%;
+            max-width: 600px;
+            margin: 20px auto;
+            display: block;
+            font-size: 16px;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .controls button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fun Sorting Algorithm Visualizer</h1>
+
+    <!-- Input to take array from user -->
+    <input type="text" id="input-array" placeholder="Enter comma-separated values (e.g. 34,12,9,45)" />
+
+    <!-- Container for array bars -->
+    <div id="array-bars"></div>
+
+    <!-- Buttons for sorting control -->
+    <div class="controls">
+        <button id="prev-btn" disabled>Previous</button>
+        <button id="play-btn">Play</button>
+        <button id="pause-btn" disabled>Pause</button>
+        <button id="next-btn" disabled>Next</button>
+        <button id="reset-btn">Reset</button>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        let array = [];  // Dynamic array based on user input
+        let steps = [];  // To store sorting steps
+        let currentStep = 0;  // Track the current step
+        let intervalId;  // For automatic play control
+
+        const inputArray = document.getElementById("input-array");
+        const container = document.getElementById("array-bars");
+        const message = document.getElementById("message");
+        const playBtn = document.getElementById("play-btn");
+        const pauseBtn = document.getElementById("pause-btn");
+        const resetBtn = document.getElementById("reset-btn");
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+
+        // Function to create the bar elements
+        function createBars(array, comparing = [], swapping = []) {
+            container.innerHTML = '';
+            const maxVal = Math.max(...array); // Find the max value
+            const barWidth = Math.max(20, container.offsetWidth / array.length - 5); // Set dynamic bar width
+            const containerHeight = 300; // Fixed height for the container
+
+            array.forEach((value, index) => {
+                const barContainer = document.createElement('div');
+                barContainer.classList.add('bar-container');
+
+                const bar = document.createElement('div');
+                // Set the bar height proportionally based on value
+                bar.style.height = `${(value / maxVal) * containerHeight}px`;
+                bar.style.width = `${barWidth}px`;
+                bar.classList.add('bar');
+
+                const barValue = document.createElement('div');
+                barValue.textContent = value;
+                barValue.classList.add('bar-value');
+                barContainer.appendChild(barValue);
+
+                if (comparing.includes(index)) {
+                    bar.classList.add('highlight');
+                }
+
+                if (swapping.includes(index)) {
+                    bar.classList.add('swap');
+                }
+
+                barContainer.appendChild(bar);
+                container.appendChild(barContainer);
+            });
+        }
+
+        // Function to parse user input
+        function parseArrayInput(input) {
+            return input.split(',').map(num => parseInt(num.trim())).filter(num => !isNaN(num));
+        }
+
+        // Bubble Sort Algorithm storing steps
+        function bubbleSort() {
+            let tempArray = [...array];
+            let tempSteps = [];
+            for (let i = 0; i < tempArray.length - 1; i++) {
+                for (let j = 0; j < tempArray.length - i - 1; j++) {
+                    let swapped = false;
+                    if (tempArray[j] > tempArray[j + 1]) {
+                        [tempArray[j], tempArray[j + 1]] = [tempArray[j + 1], tempArray[j]];
+                        swapped = true;
+                    }
+
+                    tempSteps.push({ 
+                        array: [...tempArray], 
+                        comparing: [j, j + 1], 
+                        swapping: swapped ? [j, j + 1] : [], 
+                        message: swapped ? `Swapped ${tempArray[j]} and ${tempArray[j + 1]}` : `No swap needed`
+                    });
+                }
+            }
+            tempSteps.push({ array: [...tempArray], comparing: [], swapping: [], message: "Sorting Complete!" });
+            return tempSteps;
+        }
+
+        // Event listener for user input
+        inputArray.addEventListener("change", () => {
+            array = parseArrayInput(inputArray.value);
+            if (array.length > 0) {
+                steps = bubbleSort();
+                currentStep = 0;
+                createBars(steps[currentStep].array, steps[currentStep].comparing, steps[currentStep].swapping);
+                message.textContent = steps[currentStep].message;
+                prevBtn.disabled = true;
+                nextBtn.disabled = false;
+            }
+        });
+
+        // Play through the sorting steps automatically
+        playBtn.addEventListener('click', () => {
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+            intervalId = setInterval(() => {
+                if (currentStep < steps.length - 1) {
+                    currentStep++;
+                    createBars(steps[currentStep].array, steps[currentStep].comparing, steps[currentStep].swapping);
+                    message.textContent = steps[currentStep].message;
+                    if (currentStep === steps.length - 1) {
+                        clearInterval(intervalId);
+                        message.textContent = "Sorting Complete!";
+                        pauseBtn.disabled = true;
+                        playBtn.disabled = true;
+                        nextBtn.disabled = true;
+                    }
+                }
+            }, 500);  // Adjust speed here
+        });
+
+        // Pause the automatic play
+        pauseBtn.addEventListener('click', () => {
+            clearInterval(intervalId);
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+
+        // Next step button
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                createBars(steps[currentStep].array, steps[currentStep].comparing, steps[currentStep].swapping);
+                message.textContent = steps[currentStep].message;
+                prevBtn.disabled = false;
+                if (currentStep === steps.length - 1) {
+                    nextBtn.disabled = true;
+                    message.textContent = "Sorting Complete!";
+                }
+            }
+        });
+
+        // Previous step button
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                createBars(steps[currentStep].array, steps[currentStep].comparing, steps[currentStep].swapping);
+                message.textContent = steps[currentStep].message;
+                nextBtn.disabled = false;
+                if (currentStep === 0) {
+                    prevBtn.disabled = true;
+                }
+            }
+        });
+
+        // Reset everything to default
+        resetBtn.addEventListener('click', () => {
+            clearInterval(intervalId);
+            array = [];
+            steps = [];
+            currentStep = 0;
+            container.innerHTML = '';
+            message.textContent = '';
+            inputArray.value = '';
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
